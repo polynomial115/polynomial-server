@@ -1,0 +1,6 @@
+{
+  "$schema": "https://www.partykit.io/schema.json",
+  "name": "polynomial-server",
+  "main": "src/server.ts",
+  "compatibilityDate": "2024-04-12"
+}
