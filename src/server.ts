@@ -99,6 +99,7 @@ export default class Server implements Party.Server {
           Authorization: `Bot ${lobby.env.DISCORD_TOKEN}`
         }
       })).json() as RESTGetAPIGuildMembersResult
+      if (!Array.isArray(members)) return new Response(JSON.stringify({ error: 'Failed to fetch members' }))
       const filteredMembers = members.filter(member => member.user && !member.user.bot)
       return new Response(JSON.stringify(filteredMembers))
     }
