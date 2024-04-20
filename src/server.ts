@@ -1,7 +1,7 @@
 import type * as Party from "partykit/server";
 import jwt from '@tsndr/cloudflare-worker-jwt'
 import firebase from '../firebase.json'
-import { RouteBases, Routes, type RESTGetCurrentUserGuildMemberResult, type RESTPostOAuth2AccessTokenResult } from 'discord-api-types/v10'
+import { RouteBases, Routes, type RESTGetAPIGuildMembersResult, type RESTGetCurrentUserGuildMemberResult, type RESTPostOAuth2AccessTokenResult } from 'discord-api-types/v10'
 
 export default class Server implements Party.Server {
   constructor(readonly room: Party.Room) {}
@@ -92,6 +92,15 @@ export default class Server implements Party.Server {
           Authorization: `Bot ${lobby.env.DISCORD_TOKEN}`
         }
       })
+    } else if (path.startsWith('/members')) {
+      const guildId = path.split('/')[2]
+      const members = await (await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {
+        headers: {
+          Authorization: `Bot ${lobby.env.DISCORD_TOKEN}`
+        }
+      })).json() as RESTGetAPIGuildMembersResult
+      const filteredMembers = members.filter(member => member.user && !member.user.bot)
+      return new Response(JSON.stringify(filteredMembers))
     }
   }
 }
