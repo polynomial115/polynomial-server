@@ -2,11 +2,12 @@ import type * as Party from "partykit/server";
 import jwt from '@tsndr/cloudflare-worker-jwt'
 import firebase from '../firebase.json'
 import { RouteBases, Routes, type RESTGetAPIGuildMembersResult, type RESTGetCurrentUserGuildMemberResult, type RESTPostOAuth2AccessTokenResult } from 'discord-api-types/v10'
+import { PayloadType, payloadIsType, type Payload } from './payload';
 
 export default class Server implements Party.Server {
   constructor(readonly room: Party.Room) {}
 
-  count = 0
+  project = ''
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
     // A websocket just connected!
@@ -16,24 +17,29 @@ export default class Server implements Party.Server {
   room: ${this.room.id}
   url: ${new URL(ctx.request.url).pathname}`
     );
-
-    // let's send a message to the connection
-    conn.send(String(this.count));
   }
 
   onMessage(message: string, sender: Party.Connection) {
     // let's log the message
     console.log(`connection ${sender.id} sent message: ${message}`);
-    if (message) {
-      this.count = +message
-      // as well as broadcast it to all the other connections in the room...
-      this.room.broadcast(
-        message,
-        // ...except for the connection it came from
-        [sender.id]
-      );
-    } else {
-      sender.send(String(this.count))
+    try {
+      const payload = JSON.parse(message) as Payload
+
+      if (payloadIsType(payload, PayloadType.PageUpdate)) {
+        this.project = payload.data.project
+        this.room.broadcast(message, [sender.id])
+
+      } else if (payloadIsType(payload, PayloadType.GetPage)) {
+        sender.send(JSON.stringify({
+          type: PayloadType.PageUpdate,
+          data: {
+            project: this.project
+          }
+        } satisfies Payload))
+      }
+
+    } catch {
+      console.log('Error processing message', message)
     }
   }
 
