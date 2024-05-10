@@ -83,6 +83,7 @@ export default class Server implements Party.Server {
         exp: Math.floor(Date.now() / 1000) + 60,
         uid: guildMember.user!.id,
         claims: {
+          guild: body.guild,
           roles: guildMember.roles
         }
       }, firebase.private_key, 'RS256')
