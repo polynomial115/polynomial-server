@@ -49,6 +49,8 @@ export default class Server implements Party.Server {
     ctx: Party.ExecutionContext
   ) {
     const path = new URL(req.url).pathname
+    const jwtSecret = lobby.env.JWT_SECRET as string
+
     if (path === '/login') {
       const body: { code: string, guild: string } = await req.json()
       const discordTokenResponse = await (await fetch(RouteBases.api + Routes.oauth2TokenExchange(), {
@@ -87,26 +89,53 @@ export default class Server implements Party.Server {
           roles: guildMember.roles
         }
       }, firebase.private_key, 'RS256')
-    
+
+      const serverToken = await jwt.sign({
+        user: guildMember.user.id,
+        guild: body.guild,
+        exp: Math.floor(Date.now() / 1000) + 604800,
+      }, jwtSecret)
+
       return new Response(JSON.stringify({
         discordToken: discordTokenResponse.access_token,
-        firebaseToken
+        firebaseToken,
+        serverToken
       }))
+
     } else if (path.startsWith('/roles')) {
       const guildId = path.split('/')[2]
+
+      const token = req.headers.get('Authorization')
+      if (!token || !await jwt.verify(token, jwtSecret))
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+
+      const tokenData = jwt.decode<{ guild: string }>(token)
+      if (guildId !== tokenData.payload?.guild)
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
+
       return fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
         headers: {
           Authorization: `Bot ${lobby.env.DISCORD_TOKEN}`
         }
       })
+
     } else if (path.startsWith('/members')) {
       const guildId = path.split('/')[2]
+
+      const token = req.headers.get('Authorization')
+      if (!token || !await jwt.verify(token, jwtSecret))
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+
+      const tokenData = jwt.decode<{ guild: string }>(token)
+      if (guildId !== tokenData.payload?.guild)
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
+
       const members = await (await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {
         headers: {
           Authorization: `Bot ${lobby.env.DISCORD_TOKEN}`
         }
       })).json() as RESTGetAPIGuildMembersResult
-      if (!Array.isArray(members)) return new Response(JSON.stringify({ error: 'Failed to fetch members' }))
+      if (!Array.isArray(members)) return new Response(JSON.stringify({ error: 'Failed to fetch members' }), { status: 400 })
       const filteredMembers = members.filter(member => member.user && !member.user.bot)
       return new Response(JSON.stringify(filteredMembers))
     }
