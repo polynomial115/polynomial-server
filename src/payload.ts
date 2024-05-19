@@ -6,9 +6,16 @@ export enum PayloadType {
 	GetPage
 }
 
+export enum ProjectView {
+	Overview,
+	Board,
+	TaskList
+}
+
 export interface PayloadData {
 	[PayloadType.PageUpdate]: {
 		project: string
+		projectView: ProjectView
 	}
 	[PayloadType.GetPage]: undefined
 }

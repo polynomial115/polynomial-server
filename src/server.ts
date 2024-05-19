@@ -2,12 +2,13 @@ import type * as Party from "partykit/server";
 import jwt from '@tsndr/cloudflare-worker-jwt'
 import firebase from '../firebase.json'
 import { RouteBases, Routes, type RESTGetAPIGuildMembersResult, type RESTGetCurrentUserGuildMemberResult, type RESTPostOAuth2AccessTokenResult } from 'discord-api-types/v10'
-import { PayloadType, payloadIsType, type Payload } from './payload';
+import { ProjectView, PayloadType, payloadIsType, type Payload } from './payload';
 
 export default class Server implements Party.Server {
   constructor(readonly room: Party.Room) {}
 
   project = ''
+  projectView = ProjectView.Overview
 
   onConnect(conn: Party.Connection, ctx: Party.ConnectionContext) {
     // A websocket just connected!
@@ -27,13 +28,15 @@ export default class Server implements Party.Server {
 
       if (payloadIsType(payload, PayloadType.PageUpdate)) {
         this.project = payload.data.project
+        this.projectView = payload.data.projectView
         this.room.broadcast(message, [sender.id])
 
       } else if (payloadIsType(payload, PayloadType.GetPage)) {
         sender.send(JSON.stringify({
           type: PayloadType.PageUpdate,
           data: {
-            project: this.project
+            project: this.project,
+            projectView: this.projectView
           }
         } satisfies Payload))
       }
