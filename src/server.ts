@@ -1,7 +1,7 @@
 import type * as Party from "partykit/server";
 import jwt from '@tsndr/cloudflare-worker-jwt'
 import firebase from '../firebase.json'
-import { RouteBases, Routes, type RESTGetAPIGuildMembersResult, type RESTGetCurrentUserGuildMemberResult, type RESTPostOAuth2AccessTokenResult } from 'discord-api-types/v10'
+import { ChannelType, RouteBases, Routes, type RESTGetAPIGuildChannelsResult, type RESTGetAPIGuildMembersResult, type RESTGetCurrentUserGuildMemberResult, type RESTPostAPIChannelMessageJSONBody, type RESTPostOAuth2AccessTokenResult } from 'discord-api-types/v10'
 import { ProjectView, PayloadType, payloadIsType, type Payload } from './payload';
 
 export default class Server implements Party.Server {
@@ -116,11 +116,31 @@ export default class Server implements Party.Server {
       if (guildId !== tokenData.payload?.guild)
         return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
 
-      return fetch(`https://discord.com/api/v10/guilds/${guildId}/roles`, {
+      return fetch(RouteBases.api + Routes.guildRoles(guildId), {
         headers: {
           Authorization: `Bot ${lobby.env.DISCORD_TOKEN}`
         }
       })
+
+    } else if (path.startsWith('/channels')) {
+      const guildId = path.split('/')[2]
+
+      const token = req.headers.get('Authorization')
+      if (!token || !await jwt.verify(token, jwtSecret))
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+
+      const tokenData = jwt.decode<{ guild: string }>(token)
+      if (guildId !== tokenData.payload?.guild)
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
+
+      const channels = await (await fetch(RouteBases.api + Routes.guildChannels(guildId), {
+        headers: {
+          Authorization: `Bot ${lobby.env.DISCORD_TOKEN}`
+        }
+      })).json() as RESTGetAPIGuildChannelsResult
+      if (!Array.isArray(channels)) return new Response(JSON.stringify({ error: 'Failed to fetch channels' }), { status: 400 })
+      const filteredChannels = channels.filter(channel => channel.type === ChannelType.GuildText)
+      return new Response(JSON.stringify(filteredChannels))
 
     } else if (path.startsWith('/members')) {
       const guildId = path.split('/')[2]
@@ -133,7 +153,7 @@ export default class Server implements Party.Server {
       if (guildId !== tokenData.payload?.guild)
         return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
 
-      const members = await (await fetch(`https://discord.com/api/v10/guilds/${guildId}/members?limit=1000`, {
+      const members = await (await fetch(RouteBases.api + Routes.guildMembers(guildId) + '?limit=1000', {
         headers: {
           Authorization: `Bot ${lobby.env.DISCORD_TOKEN}`
         }
@@ -141,7 +161,52 @@ export default class Server implements Party.Server {
       if (!Array.isArray(members)) return new Response(JSON.stringify({ error: 'Failed to fetch members' }), { status: 400 })
       const filteredMembers = members.filter(member => member.user && !member.user.bot)
       return new Response(JSON.stringify(filteredMembers))
+
+    } else if (/\/projects\/.+\/tasks\/.+\/notify\/create/.test(path) && req.method === 'POST') {
+      const [,, projectID ,, taskID] = path.split('/')
+
+      const token = req.headers.get('Authorization')
+      if (!token || !await jwt.verify(token, jwtSecret))
+        return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401 })
+
+      const firebaseToken = req.headers.get('Firebase-Token')
+      const projectData = await (await fetch(`https://firestore.googleapis.com/v1/projects/${firebase.project_id}/databases/(default)/documents/projects/${projectID}`, {
+        headers: { Authorization: 'Bearer ' + firebaseToken }
+      })).json() as any
+      if (!projectData.fields) return new Response(JSON.stringify({ error: 'Invalid Firebase Token' }), { status: 403 })
+
+      const guildId = projectData.fields.guildId?.stringValue
+      const tokenData = jwt.decode<{ user: String, guild: string }>(token)
+      if (!tokenData.payload || guildId !== tokenData.payload.guild)
+        return new Response(JSON.stringify({ error: 'Forbidden' }), { status: 403 })
+
+      const projectName = projectData.fields.name?.stringValue
+
+      const notificationsChannel = projectData.fields.notificationsChannel?.stringValue
+      if (!notificationsChannel)
+        return new Response(JSON.stringify({ error: 'No notifications channel' }), { status: 400 })
+
+      const task = projectData.fields.tasks?.arrayValue?.values?.find((v: any) => v.mapValue?.fields?.id?.stringValue === taskID)
+      if (!task)
+        return new Response(JSON.stringify({ error: 'Task not found' }), { status: 400 })
+
+      const taskName = task.mapValue.fields.name?.stringValue
+
+      await fetch(RouteBases.api + Routes.channelMessages(notificationsChannel), {
+        method: 'POST',
+        headers: {
+          Authorization: `Bot ${lobby.env.DISCORD_TOKEN}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          content: `<@${tokenData.payload.user}> created task **${taskName}** in ${projectName}.`,
+          allowed_mentions: { parse: [] }
+        } satisfies RESTPostAPIChannelMessageJSONBody)
+      })
+
+      return new Response('Sent notification', { status: 200 })
     }
+
   }
 }
 
