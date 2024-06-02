@@ -1,15 +1,18 @@
 {
-  "name": "polynomial-server",
-  "version": "0.0.0",
-  "private": true,
-  "scripts": {
-    "dev": "partykit dev --live",
-    "deploy": "partykit deploy"
-  },
-  "devDependencies": {
-    "@tsndr/cloudflare-worker-jwt": "^2.5.3",
-    "discord-api-types": "^0.37.79",
-    "partykit": "^0.0.100",
-    "typescript": "^5.4.2"
-  }
+	"name": "polynomial-server",
+	"version": "0.0.0",
+	"private": true,
+	"scripts": {
+		"dev": "partykit dev --live",
+		"deploy": "partykit deploy",
+		"format": "prettier . --write",
+		"check-format": "prettier . --check"
+	},
+	"devDependencies": {
+		"@tsndr/cloudflare-worker-jwt": "^2.5.3",
+		"discord-api-types": "^0.37.79",
+		"partykit": "^0.0.100",
+		"prettier": "^3.3.0",
+		"typescript": "^5.4.2"
+	}
 }
