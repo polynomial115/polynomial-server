@@ -3,6 +3,7 @@ import { RouteBases, Routes, type RESTPostAPIChannelMessageJSONBody } from 'disc
 import firebase from '@/firebase.json'
 import { error, forbidden } from '@/src/responses'
 import type { TokenData } from '@/src/server'
+import type { Document } from '@/src/firestore-types'
 
 export async function notifyCreate(req: Request, path: string, tokenData: TokenData, env: Record<string, string>) {
 	const [, , projectID, , taskID] = path.split('/')
@@ -12,22 +13,22 @@ export async function notifyCreate(req: Request, path: string, tokenData: TokenD
 		await fetch(`https://firestore.googleapis.com/v1/projects/${firebase.project_id}/databases/(default)/documents/projects/${projectID}`, {
 			headers: { Authorization: 'Bearer ' + firebaseToken }
 		})
-	).json()) as any
+	).json()) as Document
 	if (!projectData.fields) return error('Invalid Firebase Token', 403)
 
 	const guildId = projectData.fields.guildId?.stringValue
 
 	if (!tokenData || guildId !== tokenData.guild) return forbidden()
 
-	const projectName = projectData.fields.name?.stringValue as string
+	const projectName = projectData.fields.name?.stringValue
 
-	const notificationsChannel = projectData.fields.notificationsChannel?.stringValue as string
+	const notificationsChannel = projectData.fields.notificationsChannel?.stringValue
 	if (!notificationsChannel) return error('No notifications channel')
 
-	const task = projectData.fields.tasks?.arrayValue?.values?.find((v: any) => v.mapValue?.fields?.id?.stringValue === taskID)
+	const task = projectData.fields.tasks?.arrayValue?.values?.find(v => v.mapValue?.fields?.id?.stringValue === taskID)
 	if (!task) return error('Task not found')
 
-	const taskName = task.mapValue.fields.name?.stringValue
+	const taskName = task.mapValue?.fields?.name?.stringValue
 
 	await fetch(RouteBases.api + Routes.channelMessages(notificationsChannel), {
 		method: 'POST',
