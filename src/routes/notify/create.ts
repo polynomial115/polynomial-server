@@ -19,9 +19,9 @@ export async function notifyCreate(req: Request, path: string, tokenData: TokenD
 
 	if (!tokenData || guildId !== tokenData.guild) return forbidden()
 
-	const projectName = projectData.fields.name?.stringValue
+	const projectName = projectData.fields.name?.stringValue as string
 
-	const notificationsChannel = projectData.fields.notificationsChannel?.stringValue
+	const notificationsChannel = projectData.fields.notificationsChannel?.stringValue as string
 	if (!notificationsChannel) return error('No notifications channel')
 
 	const task = projectData.fields.tasks?.arrayValue?.values?.find((v: any) => v.mapValue?.fields?.id?.stringValue === taskID)

@@ -45,7 +45,7 @@ export default class Server implements Party.Server {
 		}
 	}
 
-	static async onFetch(req: Party.Request, lobby: Party.FetchLobby, ctx: Party.ExecutionContext) {
+	static async onFetch(req: Party.Request, lobby: Party.FetchLobby) {
 		const path = new URL(req.url).pathname
 		const env = lobby.env as Record<string, string>
 

@@ -5,12 +5,18 @@
 	"scripts": {
 		"dev": "partykit dev --live",
 		"deploy": "partykit deploy",
+		"lint": "eslint . --ext ts --report-unused-disable-directives --max-warnings 0",
 		"format": "prettier . --write",
 		"check-format": "prettier . --check"
 	},
 	"devDependencies": {
 		"@tsndr/cloudflare-worker-jwt": "^2.5.3",
+		"@typescript-eslint/eslint-plugin": "^7.11.0",
+		"@typescript-eslint/parser": "^7.11.0",
 		"discord-api-types": "^0.37.79",
+		"eslint": "^8.57.0",
+		"eslint-config-prettier": "^9.1.0",
+		"eslint-plugin-prettier": "^5.1.3",
 		"partykit": "^0.0.100",
 		"prettier": "^3.3.0",
 		"typescript": "^5.4.2"
