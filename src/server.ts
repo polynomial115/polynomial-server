@@ -1,11 +1,11 @@
 import type * as Party from 'partykit/server'
 import jwt from '@tsndr/cloudflare-worker-jwt'
-import { ProjectView, PayloadType, payloadIsType, type Payload } from './payload'
+import { ProjectView, PayloadType, payloadIsType, type Payload } from './types/payload'
 import { login } from './routes/login'
 import { roles } from './routes/roles'
 import { channels } from './routes/channels'
 import { members } from './routes/members'
-import { notifyCreate } from './routes/notify/create'
+import { notify } from './routes/notify'
 import { unauthorized } from './responses'
 
 export type TokenData =
@@ -62,7 +62,7 @@ export default class Server implements Party.Server {
 
 		if (path.startsWith('/members/') && req.method === 'GET') return await members(req, path, tokenData, env)
 
-		if (/\/projects\/.+\/tasks\/.+\/notify\/create/.test(path) && req.method === 'POST') return await notifyCreate(req, path, tokenData, env)
+		if (/\/projects\/.+\/tasks\/.+\/notify/.test(path) && req.method === 'POST') return await notify(req, path, tokenData, env)
 	}
 }
 
