@@ -1,15 +1,10 @@
 import type { Request } from 'partykit/server'
 import { RouteBases, Routes, type RESTGetAPIGuildMembersResult } from 'discord-api-types/v10'
-import { error, forbidden } from '../responses'
-import type { TokenData } from '../server'
+import { error } from '../responses'
 
-export async function members(req: Request, path: string, tokenData: TokenData, env: Record<string, string>) {
-	const guildId = path.split('/')[2]
-
-	if (guildId !== tokenData?.guild) return forbidden()
-
+export async function members(req: Request, guild: string, env: Record<string, string>) {
 	const members = (await (
-		await fetch(RouteBases.api + Routes.guildMembers(guildId) + '?limit=1000', {
+		await fetch(RouteBases.api + Routes.guildMembers(guild) + '?limit=1000', {
 			headers: {
 				Authorization: `Bot ${env.DISCORD_TOKEN}`
 			}

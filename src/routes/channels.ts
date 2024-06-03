@@ -1,15 +1,10 @@
 import type { Request } from 'partykit/server'
 import { ChannelType, RouteBases, Routes, type RESTGetAPIGuildChannelsResult } from 'discord-api-types/v10'
-import { error, forbidden } from '../responses'
-import type { TokenData } from '../server'
+import { error } from '../responses'
 
-export async function channels(req: Request, path: string, tokenData: TokenData, env: Record<string, string>) {
-	const guildId = path.split('/')[2]
-
-	if (guildId !== tokenData?.guild) return forbidden()
-
+export async function channels(req: Request, guild: string, env: Record<string, string>) {
 	const channels = (await (
-		await fetch(RouteBases.api + Routes.guildChannels(guildId), {
+		await fetch(RouteBases.api + Routes.guildChannels(guild), {
 			headers: {
 				Authorization: `Bot ${env.DISCORD_TOKEN}`
 			}

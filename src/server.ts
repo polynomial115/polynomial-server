@@ -6,7 +6,7 @@ import { roles } from './routes/roles'
 import { channels } from './routes/channels'
 import { members } from './routes/members'
 import { notify } from './routes/notify'
-import { unauthorized } from './responses'
+import { forbidden, unauthorized } from './responses'
 
 export type TokenData =
 	| {
@@ -55,12 +55,13 @@ export default class Server implements Party.Server {
 		if (!token || !(await jwt.verify(token, env.JWT_SECRET))) return unauthorized()
 
 		const { payload: tokenData } = jwt.decode<TokenData>(token)
+		if (!tokenData?.user || !tokenData.guild) return forbidden()
 
-		if (path.startsWith('/roles/') && req.method === 'GET') return await roles(req, path, tokenData, env)
+		if (path.startsWith('/roles') && req.method === 'GET') return await roles(req, tokenData.guild, env)
 
-		if (path.startsWith('/channels/') && req.method === 'GET') return await channels(req, path, tokenData, env)
+		if (path.startsWith('/channels') && req.method === 'GET') return await channels(req, tokenData.guild, env)
 
-		if (path.startsWith('/members/') && req.method === 'GET') return await members(req, path, tokenData, env)
+		if (path.startsWith('/members') && req.method === 'GET') return await members(req, tokenData.guild, env)
 
 		if (/\/projects\/.+\/tasks\/.+\/notify/.test(path) && req.method === 'POST') return await notify(req, path, tokenData, env)
 	}
