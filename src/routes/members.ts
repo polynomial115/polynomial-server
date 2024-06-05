@@ -15,5 +15,5 @@ export async function members(req: Request, guild: string, env: Record<string, s
 
 	const filteredMembers = members.filter(member => member.user && !member.user.bot)
 
-	return new Response(JSON.stringify(filteredMembers))
+	return Response.json(filteredMembers)
 }

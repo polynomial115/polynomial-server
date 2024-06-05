@@ -86,5 +86,5 @@ export async function notify(req: Request, path: string, tokenData: TokenData, e
 		await sendMessage(`<@${tokenData.user}> created task **${taskName}** in ${projectName}.`)
 	}
 
-	return new Response('')
+	return new Response()
 }

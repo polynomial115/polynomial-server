@@ -15,5 +15,5 @@ export async function channels(req: Request, guild: string, env: Record<string, 
 
 	const filteredChannels = channels.filter(channel => channel.type === ChannelType.GuildText)
 
-	return new Response(JSON.stringify(filteredChannels))
+	return Response.json(filteredChannels)
 }
