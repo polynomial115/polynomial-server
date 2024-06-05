@@ -5,24 +5,20 @@
 -   [Introduction](#introduction)
 -   [System Requirements](#system-requirements)
 -   [Installation](#installation)
--   [Usage](#usage)
 
-## Introduction
+# Introduction
 
-Polynomial is a project management tool designed to streamline team collaboration and task management, integrated with
-Discord. The server system is built using Node.js and Express, providing a robust back-end infrastructure to support the
-front-end functionalities. It handles user authentication, real-time updates, and notifications, making it ideal for
-remote teams working on multiple projects simultaneously.
+This is the backend system for the Polynomial project.
 
 ## System Requirements
 
--   **Node.js:** v14.x or later
--   **pnpm:** v6.x or later
+-   **Node.js**
+-   **pnpm**
 -   **Discord:** Account and server for integration
 
 ## Installation
 
-To set up the server system locally, follow these steps:
+To set up the server locally, follow these steps:
 
 1. **Clone the Repository:**
 
@@ -34,7 +30,7 @@ To set up the server system locally, follow these steps:
 2. **Install Dependencies:**
 
     ```bash
-    npm install
+    pnpm install
     ```
 
 3. **Configure Environment Variables:**
